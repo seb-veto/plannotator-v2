@@ -66,7 +66,7 @@ function loopback(path: string, method = 'GET', body?: string): Promise<{ status
   });
 }
 
-const TESTS = 4;
+const TESTS = 5;
 
 beforeAll(async () => {
   if (!hasDom) return;
@@ -167,6 +167,11 @@ const back = (el: ParentNode) => el.querySelector<HTMLButtonElement>('section.ib
 const closeThread = (el: ParentNode) => el.querySelector('section.ib-pane .ib-phead button[aria-label="Close the thread"]');
 const sidebarState = (el: ParentNode) => el.querySelector('.ib-sb')?.getAttribute('data-state') ?? null;
 const listRow = (el: ParentNode, threadId: string) => el.querySelector<HTMLElement>(`.ib-listcol .ib-lbody [data-thread-id="${threadId}"]`);
+const escapeFromThread = (el: ParentNode) => act(() => {
+  const subject = el.querySelector<HTMLElement>('section.ib-pane h2')!;
+  subject.focus();
+  subject.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+});
 
 test.skipIf(!hasDom)('with a file open beside the thread, ‹ Inbox leads the header and brings the list back', async () => {
   const el = await renderApp(`#thread=${ids.filed}&file=${ids.attachment}`);
@@ -185,7 +190,8 @@ test.skipIf(!hasDom)('with a file open beside the thread, ‹ Inbox leads the he
   expect(head.lastElementChild).toBe(head.querySelector('[data-archive]'));
   expect(back(el)!.getAttribute('aria-label')).toBe('Back to Inbox');
   expect(back(el)!.textContent?.trim()).toBe('Inbox');
-  expect(await tooltipOf(back(el)!)).toBe('Close notes.md and show the list');
+  expect(await tooltipOf(back(el)!)).toBe('Close file; show list (Esc)');
+  expect(back(el)!.getAttribute('aria-keyshortcuts')).toBe('Escape');
   expect(closeThread(el)).toBeNull();
   expect(el.querySelector('[data-stack-back]')).toBeNull();
 
@@ -204,6 +210,20 @@ test.skipIf(!hasDom)('with a file open beside the thread, ‹ Inbox leads the he
   await until(() => el.querySelector('[data-inbox-live]')?.textContent === 'Inbox list shown. notes.md closed.', 'the live region');
 });
 
+test.skipIf(!hasDom)('Escape from the thread shows Inbox beside it; another Escape closes the thread', async () => {
+  const el = await renderApp(`#thread=${ids.filed}&file=${ids.attachment}`);
+  await until(() => el.querySelector('.ib-view') !== null && back(el) !== null, 'the attached file');
+  escapeFromThread(el);
+  await settle();
+  expect(el.querySelector('.ib-view') === null).toBe(true);
+  expect(listRow(el, ids.filed)).not.toBeNull();
+  expect(window.location.hash).toContain(`thread=${ids.filed}`);
+  expect(window.location.hash).not.toContain('file=');
+  escapeFromThread(el);
+  await until(() => el.querySelector('section.ib-pane') === null, 'the Inbox list alone');
+  expect(el.querySelector('.ib-listcol')).not.toBeNull();
+});
+
 test.skipIf(!hasDom)('with the list filtered to a project, the way back names the project', async () => {
   const el = await renderApp(`#project=${ids.project}&thread=${ids.filed}&file=${ids.attachment}`);
   await until(() => back(el) !== null, 'the way back');
@@ -216,7 +236,7 @@ test.skipIf(!hasDom)('with the list filtered to a project, the way back names th
   await until(() => document.activeElement === listRow(el, ids.filed), 'focus on the thread row');
 });
 
-test.skipIf(!hasDom)('a typed comment in the open file asks first, as the file close does; Keep writing stays', async () => {
+test.skipIf(!hasDom)('Escape from the thread protects a typed file comment; Keep writing stays and Discard returns to Inbox', async () => {
   const el = await renderApp(`#thread=${ids.filed}&file=${ids.attachment}`);
   await until(() => el.querySelector('.ib-view') !== null && back(el) !== null, 'the file beside the thread');
   // A comment composer with words in it (Plannotator's popover draws in a portal on the page).
@@ -227,14 +247,14 @@ test.skipIf(!hasDom)('a typed comment in the open file asks first, as the file c
   popover.appendChild(area);
   document.body.appendChild(popover);
   try {
-    await act(async () => back(el)!.click());
+    escapeFromThread(el);
     await until(() => el.querySelector('[data-step-guard]') !== null, 'the question row');
     await act(async () => el.querySelector<HTMLButtonElement>('[data-guard-keep]')!.click());
     await settle();
     expect(el.querySelector('.ib-view')).not.toBeNull();
     expect(window.location.hash).toContain('file=');
     // Discard goes on: the file closes and the list comes back.
-    await act(async () => back(el)!.click());
+    escapeFromThread(el);
     await until(() => el.querySelector('[data-step-guard]') !== null, 'the question row again');
     await act(async () => el.querySelector<HTMLButtonElement>('[data-guard-discard]')!.click());
     await until(() => el.querySelector('.ib-view') === null && listRow(el, ids.filed) !== null, 'the list back');

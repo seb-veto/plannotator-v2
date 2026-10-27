@@ -81,6 +81,7 @@ import { OpenQuestionsButton } from './OpenQuestions';
 import { fitWholeFootRow, footRowOpenQuestionsForm, footRowTokens, laidOutChildren, pillHitsButtons, type OpenQuestionsLabelForm } from '../footFit';
 import { openQuestionsShown, placeOf, reaskItemLabel, skipToggledAnswer, threadOpenQuestions, type OpenQuestion, type OpenQuestionPlace } from '../openQuestions';
 import { selectionToolbarShowing } from '../selectionToolbar';
+import { isComposingKey, isEditableTarget, isRepeatKey, modalOpen } from '../shortcuts/guards';
 import { replyKeysToRenew, routeSendAnnotations, sendTargetAnswerIds, sendTargetsOf, type SendTarget, type SentContents } from '../sendTargets';
 
 export { routeSendAnnotations, sendTargetsOf, type SendTarget };
@@ -3179,6 +3180,16 @@ export function ThreadPane({ notice, thread, sent, onQuestions, onChanged, draft
       className={`ib-pane${fileOpen ? ' ib-withfile' : ''}`}
       aria-label={thread.subject ?? 'Thread'}
       data-thread-id={thread.thread_id}
+      onKeyDown={(event) => {
+        if (event.key !== 'Escape' || !backBesideFile || event.defaultPrevented) return;
+        if (isComposingKey(event.nativeEvent) || isRepeatKey(event.nativeEvent)) return;
+        if (isEditableTarget(event.target) || modalOpen() || selectionToolbarShowing()) return;
+        const target = event.target instanceof Element ? event.target : null;
+        if (target?.closest('[role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"]')) return;
+        event.preventDefault();
+        event.stopPropagation();
+        backToList();
+      }}
     >
       <div className="ib-phead" data-artifacts-on={artifactsOn ? '' : undefined}>
         {/* A phone leads with the way back to the list; Archive sits at the right, where the close was. */}
@@ -3220,8 +3231,8 @@ export function ThreadPane({ notice, thread, sent, onQuestions, onChanged, draft
             {/* A file beside the thread hides the list: the same way back leads; it closes the file. */}
             {backBesideFile && (
               <>
-                <Tip content={openAttachment ? `Close ${openAttachment.name} and show the list` : `Back to ${backLabel}`}>
-                  <button type="button" className="ib-pback" onClick={backToList} aria-label={`Back to ${backLabel}`} data-file-back="">
+                <Tip content="Close file; show list (Esc)">
+                  <button type="button" className="ib-pback" onClick={backToList} aria-label={`Back to ${backLabel}`} aria-keyshortcuts="Escape" data-file-back="">
                     <Icon name="chevL" size={16} />
                     <span className="ib-pback-l">{backLabel}</span>
                   </button>
