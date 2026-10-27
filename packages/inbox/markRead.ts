@@ -23,13 +23,15 @@ export const waitsOnPerson = inboxRowWaitsOnPerson;
  * after the archive (`agent_after_archive`): Mark read handles that, and the
  * thread goes back to the archive.
  */
-export function canToggleRead(row: Pick<InboxListRow, 'section' | 'unseen' | 'answered_not_sent' | 'resolved_at' | 'read_at' | 'agent_after_archive'>): boolean {
+export function canToggleRead(row: Pick<InboxListRow, 'section' | 'unseen' | 'answered_not_sent' | 'resolved_at' | 'read_at' | 'agent_after_archive'>, listedInNew = false): boolean {
   if (row.resolved_at !== null && row.agent_after_archive !== true) return false;
-  return (row.read_at ?? null) !== null || waitsOnPerson(row);
+  return (row.read_at ?? null) !== null || waitsOnPerson(row) || (listedInNew && row.section === 'quiet');
 }
 
-/** The list row's quiet hover action: on rows that wait on the person, never on Sent or Quiet. */
-export const offersRowMarkRead = inboxRowOffersMarkRead;
+/** A seen update held in New keeps its dismissal until the list settles. */
+export function offersRowMarkRead(row: Parameters<typeof inboxRowOffersMarkRead>[0], listedInNew = false): boolean {
+  return inboxRowOffersMarkRead(row) || (listedInNew && row.section === 'quiet' && row.resolved_at === null && (row.read_at ?? null) === null);
+}
 
 export interface MarkReadToast {
   /** The bold first words. */

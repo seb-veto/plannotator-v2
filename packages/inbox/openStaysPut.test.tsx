@@ -250,6 +250,24 @@ test.skipIf(!hasDom)('opening a New row unbolds it where it is, keeps it selecte
   expect(row.classList.contains('ib-u')).toBe(false);
   expect(row.getAttribute('aria-current')).toBe('true');
   expect(document.activeElement).toBe(row);
+  // Seeing the update must not remove its explicit dismissal while it stays in New.
+  const action = () => el.querySelector<HTMLButtonElement>(`[data-row="${first}"] [data-row-mark-read]`);
+  const header = () => el.querySelector<HTMLButtonElement>('[data-mark-read]')!;
+  expect(action()).not.toBeNull();
+  expect(header().disabled).toBe(false);
+  act(() => action()!.click());
+  await until(() => header().getAttribute('aria-pressed') === 'true', 'explicit Mark read');
+  expect(action()).toBeNull();
+  expect(order(el)).toEqual(before);
+  act(() => (document.querySelector('[data-toast-undo]') as HTMLButtonElement).click());
+  await until(() => header().getAttribute('aria-pressed') === 'false', 'Undo');
+  expect(action()).not.toBeNull();
+  act(() => header().click());
+  await until(() => header().getAttribute('aria-pressed') === 'true', 'header Mark read');
+  act(() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'e', bubbles: true })));
+  await until(() => header().getAttribute('aria-pressed') === 'false', 'E moves it back');
+  act(() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'e', bubbles: true })));
+  await until(() => header().getAttribute('aria-pressed') === 'true', 'E marks the seen update read');
 });
 
 test.skipIf(!hasDom)('opening a second row while one is open moves nothing; closing settles both, and focus goes to the row now in the slot', async () => {
@@ -448,7 +466,7 @@ test.skipIf(!hasDom)('Mark read inside an open thread: the toast says the row wi
   const el = await renderApp(`#project=${world.project}`);
   const first = world.news[0]!;
   await openRow(el, first);
-  // A New row once looked at waits on nobody (Mark read is off): a question from an agent does.
+  // A seen update keeps Mark read while held in New; a waiting question does too.
   const asked = await agentSends('One question:\n\n:::question\nShip it?\n\n- [ ] Yes\n- [ ] No\n:::');
   act(() => pokeStream!());
   await until(() => el.querySelector('[data-inbox-notice]') !== null, 'the "1 new" notice');

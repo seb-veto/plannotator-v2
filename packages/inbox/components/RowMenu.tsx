@@ -12,6 +12,7 @@ export interface ThreadRowMenuProps {
   rowOf: (threadId: string) => InboxListRow | null;
   /** Mark read and Move back are offered (the list has the row's hover action). */
   canMarkRead: boolean;
+  listedInNew?: (threadId: string) => boolean;
   /**
    * Whether a thread is pinned to the sidebar (approval "inbox-pinned-threads"): Pin thread or Unpin
    * thread leads the menu, in its own group. Absent (an older Inbox keeps no pins): no item.
@@ -164,7 +165,7 @@ export const ThreadRowMenu = forwardRef<HTMLDivElement, ThreadRowMenuProps>(func
     window.addEventListener('pointerdown', done, true);
     keyGuard.current = done;
   };
-  const actions = target ? rowMenuActions(target, props.canMarkRead, props.pinnedOf ? props.pinnedOf(target.thread_id) : null) : [];
+  const actions = target ? rowMenuActions(target, props.canMarkRead, props.pinnedOf ? props.pinnedOf(target.thread_id) : null, props.listedInNew?.(target.thread_id)) : [];
   const pinning = actions.filter((a) => a === 'pin' || a === 'unpin');
   const copies = actions.filter((a) => a === 'copy-link' || a === 'copy-id');
   const writes = actions.filter((a) => a === 'read' || a === 'unread' || a === 'archive');

@@ -31,14 +31,14 @@ export function threadLink(threadId: string, base: { url?: string | null; via?: 
  * row shown archived in place, or one that came back from the archive,
  * which Mark read sends back there).
  */
-export function rowMenuActions(row: InboxListRow, canMarkRead: boolean, pinned: boolean | null = null): RowMenuAction[] {
+export function rowMenuActions(row: InboxListRow, canMarkRead: boolean, pinned: boolean | null = null, listedInNew = false): RowMenuAction[] {
   const actions: RowMenuAction[] = [];
   if (pinned !== null) actions.push(pinned ? 'unpin' : 'pin');
   actions.push('copy-link', 'copy-id');
   if (canMarkRead) {
     const read = (row.read_at ?? null) !== null;
-    if (read && canToggleRead(row)) actions.push('unread');
-    else if (!read && offersRowMarkRead(row)) actions.push('read');
+    if (read && canToggleRead(row, listedInNew)) actions.push('unread');
+    else if (!read && offersRowMarkRead(row, listedInNew)) actions.push('read');
   }
   if (row.resolved_at === null) actions.push('archive');
   return actions;

@@ -773,6 +773,7 @@ export interface ThreadPaneProps {
   onScreenChange?: (state: { threadId: string; covered: boolean } | null) => void;
   /** The thread's list row as it is now: Mark read's state and whether it is offered. Null until the list has it. */
   row?: InboxListRow | null;
+  listedInNew?: boolean;
   /** Mark read, or move it back (the pressed button). Absent: no Mark read button. */
   onMarkRead?: (read: boolean) => void;
   /**
@@ -1003,7 +1004,7 @@ async function replyLanded(threadId: string, key: string): Promise<'yes' | 'no' 
 
 const THREAD_GONE_TEXT = 'This thread was deleted, so nothing was sent.';
 
-export function ThreadPane({ notice, thread, sent, onQuestions, onChanged, draftChanged = 0, onClose, file, onOpenFile, onOpenGuide, lookSeq, seenThrough = null, onSeen, covered = false, onScreenChange, row, onMarkRead, onAck, onAction, onArchive, pinned = false, onPin, replyRequest, onReplyOpened, backLabel = 'Inbox', cardChip, phone = false, stacked = false, fileStacked = false, remote = false, onBackToList, onToast, landing = null, onLanded, artifacts: artifactsRoute = false, onArtifacts }: ThreadPaneProps) {
+export function ThreadPane({ notice, thread, sent, onQuestions, onChanged, draftChanged = 0, onClose, file, onOpenFile, onOpenGuide, lookSeq, seenThrough = null, onSeen, covered = false, onScreenChange, row, listedInNew = false, onMarkRead, onAck, onAction, onArchive, pinned = false, onPin, replyRequest, onReplyOpened, backLabel = 'Inbox', cardChip, phone = false, stacked = false, fileStacked = false, remote = false, onBackToList, onToast, landing = null, onLanded, artifacts: artifactsRoute = false, onArtifacts }: ThreadPaneProps) {
   // "Open in" (OpenIn.tsx): apps on this computer; a new tab only through the tailnet or on a phone.
   const openIn: OpenInSurface | undefined = phone || remote === true ? 'tab' : remote === null ? undefined : 'apps';
   const root = thread.messages[0]!;
@@ -3079,7 +3080,7 @@ export function ThreadPane({ notice, thread, sent, onQuestions, onChanged, draft
   // Mark read: pressed while the thread is marked read, offered while something here waits on the person.
   const readAt = row?.read_at ?? null;
   const markReadOffered = !resolved && row != null && onMarkRead !== undefined;
-  const markReadEnabled = markReadOffered && canToggleRead(row!);
+  const markReadEnabled = markReadOffered && canToggleRead(row!, listedInNew);
   const closedByRead = thread.messages.flatMap((m) => (m.questions ?? []).filter((q) => q.state === 'closed' && q.set_aside_at));
 
   const openAttachment = file ? allFiles.find((a) => a.id === file.id) ?? null : null;
@@ -3157,9 +3158,9 @@ export function ThreadPane({ notice, thread, sent, onQuestions, onChanged, draft
     <Tip
       content={
         readAt !== null
-          ? 'Move it back to the top'
+          ? 'Move back · E'
           : markReadEnabled
-            ? `Out of the top until ${asker} writes again. Its waiting questions close unanswered.`
+            ? 'Quiet; closes unanswered questions (E)'
             : 'Nothing here waits on you'
       }
     >

@@ -1712,6 +1712,8 @@ function Inbox() {
 
   const rowOf = (threadId: string): InboxListRow | undefined =>
     (latestRef.current?.sections ?? []).flatMap((section) => section.threads).find((row) => row.thread_id === threadId);
+  const listedInNew = (threadId: string): boolean =>
+    shownRef.current?.some((section) => section.id === 'new' && section.threads.some((row) => row.thread_id === threadId)) ?? false;
 
   const say = (text: string) => {
     setSaid('');
@@ -2191,7 +2193,7 @@ function Inbox() {
     const threadId = rowId ?? (open && open.thread_id === routeRef.current.thread ? open.thread_id : null);
     if (!threadId) return null;
     const row = rowOf(threadId);
-    if (!row || !canToggleRead(row)) return null;
+    if (!row || !canToggleRead(row, listedInNew(threadId))) return null;
     return () => void toggle(threadId, !(row.read_at ?? null));
   };
   const threadKey = useRef<(() => void) | null>(null);
@@ -3429,6 +3431,7 @@ function Inbox() {
             thread={thread}
             sent={openThreadRow?.sent ?? null}
             row={openThreadRow}
+            listedInNew={listedInNew(thread.thread_id)}
             onMarkRead={(read) => void markRead(thread.thread_id, read)}
             onAck={(messageId, on, agent) => void acknowledge(thread.thread_id, messageId, on, agent)}
             onAction={(messageId, key, mark, info) => markAction(thread.thread_id, messageId, key, mark, info)}

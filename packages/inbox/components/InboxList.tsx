@@ -272,18 +272,20 @@ function WideRow({ row, selected, filtered, lit, pinned, keys, onOpen }: { row: 
  */
 function RowWithAction({
   row,
+  listedInNew,
   menu,
   onMarkRead,
   onSendNow,
   children,
 }: {
   row: InboxListRow;
+  listedInNew: boolean;
   menu: boolean;
   onMarkRead?: (row: InboxListRow) => void;
   onSendNow?: (row: InboxListRow) => void;
   children: ReactNode;
 }) {
-  const offer = onMarkRead && offersRowMarkRead(row);
+  const offer = onMarkRead && offersRowMarkRead(row, listedInNew);
   // A reply waiting on a busy agent that can take it now: Send now, on hover and keyboard focus as Mark read.
   const sendNow = onSendNow && !offer && row.delivery?.send_now === true && rowWait(row.delivery) !== null;
   return (
@@ -307,7 +309,7 @@ function RowWithAction({
         </Tip>
       )}
       {offer && (
-        <Tip content={`Mark read (E): out of the top until ${agentName(rowAgent(row))} writes again`}>
+        <Tip content="Quiet; closes unanswered questions (E)">
           <button
             type="button"
             className="ib-ract"
@@ -564,6 +566,7 @@ export function InboxList(props: InboxListProps) {
           className="ib-lbody"
           rowOf={rowOf}
           canMarkRead={props.onMarkRead !== undefined}
+          listedInNew={(id) => props.sections.some((s) => s.id === 'new' && s.threads.some((r) => r.thread_id === id))}
           pinnedOf={props.pinned ? (threadId) => props.pinned!.has(threadId) : undefined}
           onTarget={setMenuRow}
           onAction={(row, action) => onRowAction?.(row, action)}
@@ -599,6 +602,7 @@ export function InboxList(props: InboxListProps) {
                     <ListRow
                       key={row.thread_id}
                       row={row}
+                      listedInNew={section.id === 'new'}
                       // A phone's row has no hover action (a hover on a touch screen is a first tap): Mark read is in the thread's header there.
                       shape={props.phone ? 'phone' : twoLine ? 'narrow' : 'wide'}
                       filtered={props.filtered}
@@ -624,6 +628,7 @@ export function InboxList(props: InboxListProps) {
 
 interface ListRowProps {
   row: InboxListRow;
+  listedInNew: boolean;
   shape: 'wide' | 'narrow' | 'phone';
   filtered: boolean;
   selected: boolean;
@@ -647,11 +652,11 @@ interface ListRowProps {
  * list update renders only the rows that changed.
  */
 const ListRow = memo(
-  function ListRow({ row, shape, filtered, selected, lit, onOpen, onMarkRead, onSendNow, menu, pinned, keys }: ListRowProps) {
+  function ListRow({ row, listedInNew, shape, filtered, selected, lit, onOpen, onMarkRead, onSendNow, menu, pinned, keys }: ListRowProps) {
     const open = () => onOpen(row);
     if (shape === 'phone') return <PhoneRow row={row} filtered={filtered} lit={lit} menu={menu} pinned={pinned} keys={keys} onOpen={open} />;
     return (
-      <RowWithAction row={row} menu={menu} onMarkRead={onMarkRead} onSendNow={onSendNow}>
+      <RowWithAction row={row} listedInNew={listedInNew} menu={menu} onMarkRead={onMarkRead} onSendNow={onSendNow}>
         {shape === 'narrow' ? (
           <NarrowRow row={row} filtered={filtered} lit={lit} pinned={pinned} keys={keys} selected={selected} onOpen={open} />
         ) : (
@@ -662,6 +667,7 @@ const ListRow = memo(
   },
   (a, b) =>
     a.shape === b.shape &&
+    a.listedInNew === b.listedInNew &&
     a.filtered === b.filtered &&
     a.selected === b.selected &&
     a.lit === b.lit &&

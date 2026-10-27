@@ -216,6 +216,11 @@ test('the link is the Inbox one address plus #thread=, and the items follow the 
   expect(rowMenuActions(base, true)).toEqual(['copy-link', 'copy-id', 'read', 'archive']);
   expect(rowMenuActions({ ...base, section: 'quiet', read_at: '2026-10-20T00:00:00Z' }, true)).toEqual(['copy-link', 'copy-id', 'unread', 'archive']);
   expect(rowMenuActions({ ...base, section: 'sent' }, true)).toEqual(['copy-link', 'copy-id', 'archive']);
+  // Only seen news still drawn in New keeps its dismissal; settled Quiet and Sent do not.
+  expect(rowMenuActions({ ...base, section: 'quiet' }, true, null, true)).toContain('read');
+  expect(rowMenuActions({ ...base, section: 'quiet' }, true)).not.toContain('read');
+  expect(rowMenuActions({ ...base, section: 'sent' }, true, null, true)).not.toContain('read');
+  expect(rowMenuActions({ ...base, section: 'quiet', resolved_at: '2026-10-20T00:00:00Z' }, true, null, true)).not.toContain('read');
   // Archived (held in place while a thread is open): only the copies.
   expect(rowMenuActions({ ...base, section: 'quiet', resolved_at: '2026-10-20T00:00:00Z' }, true)).toEqual(['copy-link', 'copy-id']);
   // An Inbox that keeps pins (approval "inbox-pinned-threads"): Pin or Unpin leads, an archived row's too.
