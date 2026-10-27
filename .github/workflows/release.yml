@@ -23,7 +23,7 @@ jobs:
   # or create a GitHub release even if the build itself succeeds.
   release-eligibility:
     if: startsWith(github.ref, 'refs/tags/v') && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs['dry-run'] == 'false'))
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
     steps:
@@ -48,7 +48,7 @@ jobs:
         run: node scripts/check-release-version.mjs --tag "$RELEASE_TAG"
 
   test:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
 
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -74,7 +74,7 @@ jobs:
 
   build:
     needs: test
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     # Build job has NO id-token / attestations permissions. Compilation
     # itself doesn't need OIDC minting — those capabilities live in the
     # separate `attest` job below, which only runs on tag pushes. This
@@ -236,7 +236,7 @@ jobs:
           name: page-digests
           path: page-digests
 
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           package-manager-cache: false
@@ -908,7 +908,7 @@ jobs:
           bun-version: 1.4.4
           no-cache: true
 
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           package-manager-cache: false
@@ -1098,7 +1098,7 @@ jobs:
       - install-script-smoke
       - release-security
     if: startsWith(github.ref, 'refs/tags/v') && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs['dry-run'] == 'false'))
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
       id-token: write
@@ -1183,7 +1183,7 @@ jobs:
     # race-fail. `needs: attest` implicitly requires `build` too.
     needs: attest
     if: startsWith(github.ref, 'refs/tags/v') && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs['dry-run'] == 'false'))
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: write
 
@@ -1227,7 +1227,7 @@ jobs:
       - smoke-binaries
       - pi-extension-ai-runtime-windows
       - install-script-smoke
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
     steps:
@@ -1240,7 +1240,7 @@ jobs:
           bun-version: 1.4.4
           no-cache: true
 
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           package-manager-cache: false
@@ -1282,7 +1282,7 @@ jobs:
     needs:
       - build
       - npm-package
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
     outputs:
@@ -1360,13 +1360,13 @@ jobs:
       - npm-package
       - release-security
     if: startsWith(github.ref, 'refs/tags/v') && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs['dry-run'] == 'false'))
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     environment: npm-publish
     permissions:
       contents: read
       id-token: write
     steps:
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           package-manager-cache: false
