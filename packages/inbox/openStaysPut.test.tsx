@@ -85,7 +85,7 @@ async function agentSends(body: string, reply_to?: string): Promise<string> {
   return (JSON.parse(await readLine()) as { sent: string }).sent;
 }
 
-const TESTS = 11;
+const TESTS = 13;
 
 beforeAll(async () => {
   if (!hasDom) return;
@@ -234,6 +234,61 @@ function mouseClick(el: HTMLElement) {
     el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 1 }));
   });
 }
+
+test.skipIf(!hasDom)('J and K open Inbox rows in visible order without wrapping', async () => {
+  const el = await renderApp(`#project=${world.project}`);
+  const rows = order(el);
+  const key = (key: string, target: EventTarget = document.body) => act(() => {
+    target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+  });
+  key('j');
+  await until(() => window.location.hash.includes(`thread=${rows[0]}`), 'J opens the first row');
+  key('k');
+  await wait(60);
+  expect(window.location.hash).toContain(`thread=${rows[0]}`);
+  key('j');
+  await until(() => window.location.hash.includes(`thread=${rows[1]}`), 'J opens the next row');
+  key('k');
+  await until(() => window.location.hash.includes(`thread=${rows[0]}`), 'K opens the previous row');
+  const last = rowOf(el, rows.at(-1)!)!;
+  key('j', last);
+  await until(() => window.location.hash.includes(`thread=${rows.at(-1)}`), 'J stays on the last row');
+  key('j');
+  await wait(60);
+  expect(window.location.hash).toContain(`thread=${rows.at(-1)}`);
+  expect(order(el)).toEqual(rows);
+  closeThread();
+  await until(() => el.querySelector('section.ib-pane') === null, 'the list without a selection');
+  await wait(SETTLE_BEAT_MS + 60);
+  const remaining = order(el);
+  key('k', el.querySelector('h1 button')!);
+  await until(() => window.location.hash.includes(`thread=${remaining.at(-1)}`), 'K without a selection opens the last row');
+});
+
+test.skipIf(!hasDom)('Inbox J/K wins over in-thread message navigation and leaves typing alone', async () => {
+  const first = world.news[0]!;
+  await agentSends('Another message in this thread.', first);
+  const el = await renderApp(`#project=${world.project}`);
+  await openRow(el, first);
+  const rows = order(el);
+  const next = rows[rows.indexOf(first) + 1]!;
+  expect(next).toBeTruthy();
+  const subject = el.querySelector<HTMLElement>('section.ib-pane h2')!;
+  act(() => {
+    subject.focus();
+    subject.dispatchEvent(new KeyboardEvent('keydown', { key: 'j', bubbles: true, cancelable: true }));
+  });
+  await until(() => window.location.hash.includes(`thread=${next}`), 'J from the reading pane opens the next Inbox row');
+  const input = document.createElement('textarea');
+  el.appendChild(input);
+  const before = window.location.hash;
+  for (const key of ['j', 'k']) {
+    const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
+    act(() => { input.focus(); input.dispatchEvent(event); });
+    expect(event.defaultPrevented).toBe(false);
+  }
+  expect(window.location.hash).toBe(before);
+});
 
 test.skipIf(!hasDom)('opening a New row unbolds it where it is, keeps it selected and keeps focus on it', async () => {
   const el = await renderApp(`#project=${world.project}`);

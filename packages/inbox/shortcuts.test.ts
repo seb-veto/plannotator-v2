@@ -4,7 +4,7 @@
  * cannot read (it would never fire), two scopes with one id (one would shadow
  * the other in a help list), the full-screen chord drifting from plan
  * review's, or a new bare letter slipping in (the owner's rule: none until the
- * shared shortcut system lists them; E and Z predate it).
+ * shared shortcut system lists them; E and Z predate it, J/K are owner-approved).
  */
 import { describe, expect, test } from 'bun:test';
 import { htmlAnnotateShortcuts, listRegistryShortcuts, matchesShortcutBinding, validateShortcutRegistry } from '@plannotator/ui/shortcuts';
@@ -19,11 +19,11 @@ describe('the Inbox surface', () => {
     expect(inboxSurface.registry).toBe(inboxShortcutRegistry);
   });
 
-  test('the only bare letters are E and Z (Archive, Undo)', () => {
+  test('the approved bare letters are E, Z, J and K (Archive, Undo, Inbox navigation)', () => {
     const letters = listRegistryShortcuts(inboxShortcutRegistry)
       .flatMap((entry) => entry.bindings)
       .filter((binding) => /^[A-Z]$/.test(binding));
-    expect(letters.sort()).toEqual(['E', 'Z']);
+    expect(letters.sort()).toEqual(['E', 'J', 'K', 'Z']);
   });
 
   test('the full-screen toolbar takes plan review’s Hide tools chord', () => {
@@ -43,5 +43,11 @@ describe('the Inbox surface', () => {
     expect(archive.bindings.some((b) => matchesShortcutBinding(keydown({ key: 'e' }), b))).toBe(true);
     expect(archive.bindings.some((b) => matchesShortcutBinding(keydown({ key: 'e', ctrlKey: true }), b))).toBe(false);
     expect(archive.bindings.some((b) => matchesShortcutBinding(keydown({ key: 'e', altKey: true }), b))).toBe(false);
+    for (const [key, shortcut] of [['j', inboxThreadShortcuts.shortcuts.nextThread], ['k', inboxThreadShortcuts.shortcuts.previousThread]] as const) {
+      expect(shortcut.bindings.some((b) => matchesShortcutBinding(keydown({ key }), b))).toBe(true);
+      for (const modifier of [{ ctrlKey: true }, { metaKey: true }, { altKey: true }]) {
+        expect(shortcut.bindings.some((b) => matchesShortcutBinding(keydown({ key, ...modifier }), b))).toBe(false);
+      }
+    }
   });
 });

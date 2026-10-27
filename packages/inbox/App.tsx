@@ -62,7 +62,7 @@ import { SearchHost, type SearchLanding } from './components/SearchHost';
 import { onOpenSearchKey } from './search/searchShortcut';
 import { useShortcutScope } from '@plannotator/ui/shortcuts';
 import { inboxThreadShortcuts } from './shortcuts/thread.shortcuts';
-import { isComposingKey, isEditableTarget, isRepeatKey } from './shortcuts/guards';
+import { isComposingKey, isEditableTarget, isRepeatKey, modalOpen } from './shortcuts/guards';
 import { EmptyState } from './components/EmptyState';
 import { Icon } from './icons';
 import { TourBar, TourCoach, TourLoading, TourMain, TourNavigation, loadTour, tourComposeBody, tourComposeTransport, tourView, useReducedMotion, useTourFixture, useTourReplay } from './tour/Tour';
@@ -2167,10 +2167,10 @@ function Inbox() {
   const keysRef = useRef({ archive, toast, thread, soundDialog, agentNoteOpen: false });
   keysRef.current = { archive, toast, thread, soundDialog, agentNoteOpen: typeof agentNote === 'object' };
   /**
-   * What E or Z does now, or null when it stands down (the rules: guards.ts
+   * What a thread or Inbox-list key does now, or null when it stands down (guards.ts
    * for typing, composition and repeat; the rest is the thread's own).
    */
-  const threadKeyAction = (event: KeyboardEvent, key: 'e' | 'z'): (() => void) | null => {
+  const threadKeyAction = (event: KeyboardEvent, key: 'e' | 'z' | 'j' | 'k'): (() => void) | null => {
     if (event.defaultPrevented || isRepeatKey(event) || isComposingKey(event)) return null;
     if (keysRef.current.soundDialog === 'open' || keysRef.current.agentNoteOpen || routeRef.current.guide) return null;
     // Words selected in a message: its toolbar takes the letters (a comment starting with them).
@@ -2186,6 +2186,22 @@ function Inbox() {
     // Never over the tour: its screens are a replay, and an undo would write to the Inbox underneath.
     if (key === 'z') return routeRef.current.page === 'tour' ? null : (current?.onUndo ?? null);
     if (routeRef.current.page !== 'inbox') return null;
+    if (key === 'j' || key === 'k') {
+      const body = listBody(rootRef.current);
+      if (!body || modalOpen() || (routeRef.current.thread && listCovered())) return null;
+      const rows = [...body.querySelectorAll<HTMLElement>('[data-thread-id]')];
+      if (rows.length === 0) return null;
+      const focused = target?.closest('.ib-listcol [data-row], .ib-listcol [data-thread-id]');
+      const current = focused?.getAttribute('data-thread-id') ?? focused?.getAttribute('data-row') ?? routeRef.current.thread;
+      const index = rows.findIndex((row) => row.getAttribute('data-thread-id') === current);
+      const nextIndex = index < 0 ? (key === 'j' ? 0 : rows.length - 1) : index + (key === 'j' ? 1 : -1);
+      const next = rows[Math.max(0, Math.min(rows.length - 1, nextIndex))]!;
+      return () => {
+        next.focus({ preventScroll: true });
+        next.scrollIntoView?.({ block: 'nearest' });
+        if (next.getAttribute('data-thread-id') !== routeRef.current.thread) next.click();
+      };
+    }
     // A row the keyboard is on wins over the thread open beside the list; a
     // row that merely holds focus (clicked, or put there after a mouse close) does not.
     const rowEl = target?.closest('.ib-listcol [data-row]') ?? null;
@@ -2197,6 +2213,21 @@ function Inbox() {
     return () => void archiveThread(threadId, threadId, true);
   };
   const threadKey = useRef<(() => void) | null>(null);
+  // The visible Inbox list takes J/K before the thread's window-level message keys.
+  useShortcutScope({
+    scope: inboxThreadShortcuts,
+    target: 'document',
+    handlers: {
+      nextThread: {
+        when: (event) => (threadKey.current = threadKeyAction(event, 'j')) !== null,
+        handle: () => threadKey.current?.(),
+      },
+      previousThread: {
+        when: (event) => (threadKey.current = threadKeyAction(event, 'k')) !== null,
+        handle: () => threadKey.current?.(),
+      },
+    },
+  });
   useShortcutScope({
     scope: inboxThreadShortcuts,
     handlers: {

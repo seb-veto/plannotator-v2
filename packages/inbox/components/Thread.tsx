@@ -2069,7 +2069,8 @@ export function ThreadPane({ notice, thread, sent, onQuestions, onChanged, draft
     target.querySelector<HTMLElement>('[data-fold-head]')?.focus({ preventScroll: true });
   }, [passedIds]);
 
-  // j / k move between messages (and the middle fold), n goes to the first
+  // The visible Inbox list handles j / k first; otherwise they move between messages (and the middle fold).
+  // n goes to the first
   // new one; Enter and Space are the buttons' own. Never while typing, and
   // never while the Artifacts grid stands in for the messages.
   useEffect(() => {
