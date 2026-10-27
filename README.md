@@ -1,3 +1,9 @@
+# plannotator-v2
+
+A separate Craft-reference fork of Plannotator, preserving the real Inbox and review workflows. [Build, run, isolation and behavior](docs/plannotator-v2/README.md). Use the v2 launcher to keep your original Inbox data and appearance independent.
+
+---
+
 <p align="center">
   <img src=".github/assets/banner.webp" alt="Plannotator" width="640" />
 </p>

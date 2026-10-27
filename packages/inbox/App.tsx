@@ -528,6 +528,7 @@ function Inbox() {
   const shownRef = useRef(shown);
   shownRef.current = shown;
   const [thread, setThread] = useState<InboxThread | null>(null);
+  const [unreadOnly, setUnreadOnly] = useState(false);
   /** The open thread's own list row, from its read: an archived thread has none in the list. */
   const [threadRow, setThreadRow] = useState<InboxListRow | null>(null);
   /** The open thread's read when it has not landed: failed (read again soon) or missing (a 404). */
@@ -1362,13 +1363,11 @@ function Inbox() {
   const whatsNewReturn = useRef('');
   if (route.page !== 'settings' && route.page !== 'whats-new' && route.page !== 'tour') whatsNewReturn.current = hashOf(route);
 
-  // Settings is a focused page (design of record inbox-settings-tabs): the sidebar slides away while it
-  // is open and comes back on leaving, without writing the person's stored choice. ⌘B there opens it
-  // for this visit only.
-  const [settingsSidebar, setSettingsSidebar] = useState(false);
+  // Settings keeps the reference's primary navigation; a visit-local toggle preserves the stored choice.
+  const [settingsSidebar, setSettingsSidebar] = useState(sidebarOpen);
   useEffect(() => {
-    if (route.page !== 'settings') setSettingsSidebar(false);
-  }, [route.page]);
+    if (route.page !== 'settings') setSettingsSidebar(sidebarOpen);
+  }, [route.page, sidebarOpen]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -3385,10 +3384,12 @@ function Inbox() {
           scope={route.project}
           title={filterProject?.name ?? 'Inbox'}
           path={filterProject ? tildePath(filterProject.root, settings?.home) : null}
-          sections={filterSections(shown, route.project)}
+          sections={filterSections(shown, route.project, unreadOnly)}
+          unreadOnly={unreadOnly}
+          onUnreadOnlyChange={setUnreadOnly}
           filtered={filterProject !== null}
           // A stacked thread covers the list, which keeps its own width (and scroll) under it.
-          narrow={route.thread !== null && !stack.thread}
+          narrow={!phone && !stack.thread}
           selectedThreadId={route.thread}
           lit={lit}
           notice={notice}
@@ -3430,7 +3431,7 @@ function Inbox() {
           onDecide={() => openDecide()}
           phone={phone}
           empty={
-            projectAllArchived(filterProject) ? (
+            unreadOnly ? <div className="ib-empty-list" role="status">No unread threads.</div> : projectAllArchived(filterProject) ? (
               <div className="ib-empty-list" data-project-archived="">
                 <b dir="auto">Everything in {filterProject!.name} is archived.</b>
                 It leaves the sidebar when you go elsewhere, and comes back when an agent writes there.{' '}
@@ -3439,6 +3440,13 @@ function Inbox() {
             ) : null
           }
         />
+        )}
+        {!route.thread && !phone && !stack.thread && (
+          <section className="ib-reading-empty" aria-label="No thread selected">
+            <Icon name="inbox" size={24} />
+            <h2>Pick up where you left off</h2>
+            <p>Select a thread to read and reply.</p>
+          </section>
         )}
         {/* Beside the list, the thread's place says it is opening (or why not) until its read lands; a phone
             and a stacked window keep the list until there is a thread to show. */}
@@ -3874,7 +3882,7 @@ function Inbox() {
 
 export function InboxApp() {
   return (
-    <ThemeProvider defaultTheme="system">
+    <ThemeProvider defaultTheme="dark" defaultColorTheme="plannotator-v2">
       {/* Every tooltip in the window (Tip): 150 ms to open, and the next one at once within 400 ms. */}
       <TooltipProvider delayDuration={TIP_DELAY_MS} skipDelayDuration={TOOLTIP_SKIP_DELAY_MS} disableHoverableContent>
         <Inbox />

@@ -298,10 +298,9 @@ export function markHeldRowArchived(shown: readonly InboxListSection[], threadId
   }));
 }
 
-/** One project's rows only; the sections stay, empty ones included. */
-export function filterSections(sections: readonly InboxListSection[], projectId: string | null): InboxListSection[] {
-  if (!projectId) return sections.map((s) => ({ ...s }));
-  return sections.map((s) => ({ ...s, threads: s.threads.filter((row) => row.project.id === projectId) }));
+/** Unread means unseen messages; pending questions keep their section without keeping unread emphasis. */
+export function filterSections(sections: readonly InboxListSection[], projectId: string | null, unreadOnly = false): InboxListSection[] {
+  return sections.map((s) => ({ ...s, threads: s.threads.filter((row) => (!projectId || row.project.id === projectId) && (!unreadOnly || row.unseen > 0)) }));
 }
 
 /** The rows that wait on the person (Stopped, Holding, Waiting): the sidebar counts. */

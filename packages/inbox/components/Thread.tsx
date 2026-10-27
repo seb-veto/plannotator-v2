@@ -3249,14 +3249,9 @@ export function ThreadPane({ notice, thread, sent, onQuestions, onChanged, draft
         {phone && artifactsOn ? null : (
           <>
             {markReadButton}
-            {one && !artifactsOn ? (
-              <span className="ib-sp" />
-            ) : (
-              // The subject, once it has scrolled away, and always over the Artifacts grid (the heading stays the one a screen reader reads).
-              <span className="ib-phsubj" dir="auto" data-header-subject="" data-on={chrome.subject || artifactsOn ? '' : undefined} aria-hidden="true">
-                {thread.subject ?? '(no subject)'}
-              </span>
-            )}
+            <span className="ib-phsubj" dir="auto" data-header-subject="" data-on="" aria-hidden="true">
+              {thread.subject ?? '(no subject)'}
+            </span>
             {pinButton}
             {artifactsButton && (
               <Tip content={artifactsOn ? 'Back to the thread' : 'Artifacts: every file, image and guided review in this thread'}>

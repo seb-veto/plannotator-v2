@@ -1,8 +1,12 @@
+import { setStorageBackend } from '@plannotator/ui/utils/storage';
+import { plannotatorV2Storage } from '@plannotator/ui/utils/plannotatorV2Storage';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from '@plannotator/review-editor';
 import { ReviewWorkerPoolProvider } from '@plannotator/review-editor/worker-pool';
 import '@plannotator/review-editor/styles';
+
+setStorageBackend(plannotatorV2Storage);
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {

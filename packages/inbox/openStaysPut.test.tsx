@@ -85,7 +85,7 @@ async function agentSends(body: string, reply_to?: string): Promise<string> {
   return (JSON.parse(await readLine()) as { sent: string }).sent;
 }
 
-const TESTS = 14;
+const TESTS = 16;
 
 beforeAll(async () => {
   if (!hasDom) return;
@@ -235,6 +235,42 @@ function mouseClick(el: HTMLElement) {
   });
 }
 
+test.skipIf(!hasDom)('Unread filters seen rows without closing the selected thread; toggle restores them', async () => {
+  const el = await renderApp(`#project=${world.project}`);
+  const first = world.news[0]!;
+  await openRow(el, first);
+  const rows = order(el);
+  const toggle = el.querySelector<HTMLButtonElement>('[aria-label="Unread threads only"]')!;
+  expect(toggle.getAttribute('aria-pressed')).toBe('false');
+  act(() => toggle.click());
+  await until(() => !rowOf(el, first), 'seen row filtered out');
+  expect(order(el).length).toBeLessThan(rows.length);
+  expect(window.location.hash).toContain(`thread=${first}`);
+  expect(el.querySelector('section.ib-pane')?.getAttribute('data-thread-id')).toBe(first);
+  act(() => toggle.click());
+  await until(() => rowOf(el, first) !== null, 'all rows restored');
+  expect(order(el)).toEqual(rows);
+});
+
+test.skipIf(!hasDom)('seeing a waiting question clears unread emphasis and filtering without dismissing it', async () => {
+  const el = await renderApp(`#project=${world.project}`);
+  const asked = await agentSends('One question:\n\n:::question\nShip it?\n\n- [ ] Yes\n- [ ] No\n:::');
+  act(() => pokeStream!());
+  await until(() => el.querySelector('[data-inbox-notice]') !== null, 'new question notice');
+  act(() => (el.querySelector('[data-inbox-notice]') as HTMLButtonElement).click());
+  await until(() => rowOf(el, asked) !== null, 'question shown');
+  expect(rowOf(el, asked)!.classList.contains('ib-u')).toBe(true);
+  await openRow(el, asked, null);
+  await until(() => !rowOf(el, asked)!.classList.contains('ib-u'), 'seen question unbolds');
+  expect(await serverSection(asked)).toBe('waiting');
+  expect(el.querySelector('section.ib-pane')!.textContent).toContain('Ship it?');
+  const toggle = el.querySelector<HTMLButtonElement>('[aria-label="Unread threads only"]')!;
+  act(() => toggle.click());
+  await until(() => !rowOf(el, asked), 'seen question excluded from unread');
+  expect(el.querySelector('section.ib-pane')?.getAttribute('data-thread-id')).toBe(asked);
+  expect(posted.filter((path) => path.endsWith('/read'))).toEqual([]);
+});
+
 test.skipIf(!hasDom)('Command-period toggles thread focus mode, preserves the list and yields to dialogs', async () => {
   const el = await renderApp(`#project=${world.project}`);
   const root = el.querySelector<HTMLElement>('.pn-inbox')!;
@@ -244,7 +280,9 @@ test.skipIf(!hasDom)('Command-period toggles thread focus mode, preserves the li
     return event;
   };
   expect(key().defaultPrevented).toBe(false);
+  expect(el.querySelector('.ib-reading-empty')).not.toBeNull();
   await openRow(el, world.news[0]!);
+  expect(el.querySelector('.ib-reading-empty')).toBeNull();
   const list = el.querySelector('.ib-listcol');
   const hash = window.location.hash;
   expect(key().defaultPrevented).toBe(true);

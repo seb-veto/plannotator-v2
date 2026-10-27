@@ -1,7 +1,11 @@
+import { setStorageBackend } from '@plannotator/ui/utils/storage';
+import { plannotatorV2Storage } from '@plannotator/ui/utils/plannotatorV2Storage';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from '@plannotator/editor';
 import '@plannotator/editor/styles';
+
+setStorageBackend(plannotatorV2Storage);
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {

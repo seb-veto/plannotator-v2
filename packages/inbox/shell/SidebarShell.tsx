@@ -18,10 +18,9 @@ import { Sidebar, SidebarProvider, useSidebar, type SidebarToggleNotice } from "
 import { SidebarPeek } from "./SidebarPeek";
 import { useResizablePanel } from "./useResizablePanel";
 
-// The record draws the sidebar at 232 px. The viable range keeps the record's
-// width inside it; reserveViewport keeps 320 px of the page beside it, as in
-// Workspaces.
-const SIDEBAR_DEFAULT = 232;
+// The v2 reference uses a compact 200 px navigation column; resizing remains
+// available and reserveViewport keeps 320 px of the page beside it.
+const SIDEBAR_DEFAULT = 200;
 const SIDEBAR_MIN = 200;
 const SIDEBAR_MAX = 520;
 

@@ -29,8 +29,8 @@ import { preloadShellAnimate, useCombinedMotionValue, useShellProgress } from ".
 
 // Fallback only: the Inbox shell always overrides --sidebar-width with its
 // committed resizable value. This static twin exists for bare mounts.
-const SIDEBAR_WIDTH = "232px";
-const SIDEBAR_WIDTH_PX = 232;
+const SIDEBAR_WIDTH = "200px";
+const SIDEBAR_WIDTH_PX = 200;
 const SIDEBAR_WIDTH_MOBILE = "260px";
 const SIDEBAR_KEYBOARD_SHORTCUT = "b";
 

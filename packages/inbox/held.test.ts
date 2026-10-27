@@ -5,7 +5,7 @@
  */
 import { describe, expect, test } from 'bun:test';
 import type { InboxListRow, InboxListSection } from '@plannotator/core/inbox-types';
-import { addOwnThreads, adoptKeepingOpen, heldNotice, markHeldRowArchived, refreshHeldRows, settleOwn, settleThread } from './held';
+import { addOwnThreads, adoptKeepingOpen, filterSections, heldNotice, markHeldRowArchived, refreshHeldRows, settleOwn, settleThread } from './held';
 
 function row(id: string, project: string, last_at: string, last_author: 'agent' | 'person'): InboxListRow {
   return { thread_id: id, project: { id: `prj_${project}`, name: project }, last_at, last_author } as InboxListRow;
@@ -430,4 +430,15 @@ describe('adoptKeepingOpen', () => {
     expect(next[0]!.threads[2]).toBe(archivedRow);
     expect(next[0]!.threads[2]!.resolved_at).toBe('2026-10-20T10:05:00Z');
   });
+});
+
+test('unread-only filtering intersects the project without mutating held rows or order', () => {
+  const a = { ...row('a', 'one', '2026-10-27T10:00:00Z', 'agent'), unread: true, unseen: 1 };
+  const b = { ...row('b', 'one', '2026-10-27T09:00:00Z', 'agent'), unread: true, unseen: 0 };
+  const c = { ...row('c', 'two', '2026-10-27T08:00:00Z', 'agent'), unread: true, unseen: 1 };
+  const held = sections(a, b, c);
+  expect(filterSections(held, null, true)[0]!.threads).toEqual([a, c]);
+  expect(filterSections(held, 'prj_one', true)[0]!.threads).toEqual([a]);
+  expect(filterSections(held, 'prj_one')[0]!.threads).toEqual([a, b]);
+  expect(held[0]!.threads).toEqual([a, b, c]);
 });

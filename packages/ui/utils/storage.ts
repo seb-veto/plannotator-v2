@@ -46,6 +46,9 @@ const cookieBackend: StorageBackend = {
   },
 };
 
+/** The native cookie backend, for hosts that namespace settings through setStorageBackend. */
+export const cookieStorage: StorageBackend = cookieBackend;
+
 // Active backend. Defaults to cookies so Plannotator is unchanged. A host
 // (e.g. Workspaces) calls setStorageBackend once at startup to persist settings
 // through its own storage instead.

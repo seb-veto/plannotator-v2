@@ -22,6 +22,16 @@ export interface ThemeInfo {
 
 export const BUILT_IN_THEMES: ThemeInfo[] = [
   {
+    id: 'plannotator-v2',
+    name: 'Plannotator v2',
+    builtIn: true,
+    modeSupport: 'both',
+    colors: {
+      dark: { primary: '#b29fff', secondary: '#292a2c', accent: '#292a2c', background: '#1b1c1e', foreground: '#ecedef' },
+      light: { primary: '#6942c3', secondary: '#eceef0', accent: '#e7e8ea', background: '#f2f3f4', foreground: '#1a1c1e' },
+    },
+  },
+  {
     id: 'plannotator',
     name: 'Plannotator',
     builtIn: true,

@@ -13,7 +13,6 @@ import { shownProjects, type ProjectAction } from '../projectMenu';
 import { ProjectRow } from './ProjectRow';
 import { PinnedRow, type PinnedAction } from './PinnedRow';
 import { useInboxTheme } from '../theme';
-import { TaterMark } from './TaterMark';
 import { ProjectTip } from './ProjectRow';
 import { Tip } from './Tip';
 import { CheckFailingRow, UpdateButton } from './Updates';
@@ -208,9 +207,9 @@ export function Sidebar(props: SidebarProps) {
   return (
     <aside className="ib-side" aria-label="Inbox navigation">
       <div className="ib-brand">
-        <TaterMark />
+        <span className="ib-v2-mark" aria-hidden="true"><Icon name="inbox" size={16} /></span>
         <b>Plannotator</b>
-        <span>Inbox</span>
+        <span>v2</span>
       </div>
       {props.onSearch && (
         <div className="ib-sp-entryrow">

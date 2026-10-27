@@ -26,6 +26,8 @@ export interface InboxListProps {
   /** The project's folder, `~/src/billing-svc`, when one project is shown. */
   path: string | null;
   sections: readonly InboxListSection[];
+  unreadOnly?: boolean;
+  onUnreadOnlyChange?: (unreadOnly: boolean) => void;
   /** One project is shown: its rows drop the project label. */
   filtered: boolean;
   /**
@@ -239,7 +241,7 @@ function WideRow({ row, selected, filtered, lit, pinned, keys, onOpen }: { row: 
   return (
     <button
       type="button"
-      className={`ib-row${row.unread ? ' ib-u' : ''}${sent ? ' ib-sent' : ''}${selected ? ' ib-sel' : ''}`}
+      className={`ib-row${row.unseen > 0 ? ' ib-u' : ''}${sent ? ' ib-sent' : ''}${selected ? ' ib-sel' : ''}`}
       onClick={onOpen}
       aria-current={selected ? 'true' : undefined}
       data-thread-id={row.thread_id}
@@ -335,7 +337,7 @@ function NarrowRow({ row, selected, filtered, lit, pinned, keys, onOpen }: { row
   return (
     <button
       type="button"
-      className={`ib-nrow${row.unread ? ' ib-u' : ''}${row.section === 'sent' ? ' ib-sent' : ''}${selected ? ' ib-sel' : ''}`}
+      className={`ib-nrow${row.unseen > 0 ? ' ib-u' : ''}${row.section === 'sent' ? ' ib-sent' : ''}${selected ? ' ib-sel' : ''}`}
       onClick={onOpen}
       aria-current={selected ? 'true' : undefined}
       data-thread-id={row.thread_id}
@@ -376,7 +378,7 @@ function PhoneRow({ row, filtered, lit, menu, pinned, keys, onOpen }: { row: Inb
   return (
     <button
       type="button"
-      className={`ib-mrow${row.unread ? ' ib-u' : ''}${row.section === 'sent' ? ' ib-sent' : ''}`}
+      className={`ib-mrow${row.unseen > 0 ? ' ib-u' : ''}${row.section === 'sent' ? ' ib-sent' : ''}`}
       onClick={onOpen}
       data-thread-id={row.thread_id}
       // The row's menu (RowMenu.tsx); a click opens the thread, so no aria-haspopup.
@@ -454,6 +456,7 @@ export function InboxList(props: InboxListProps) {
   const headerCompose = isMobile || !sidebarDocked;
   const columnId = useId();
   const refreshHintId = useId();
+  const unreadHintId = useId();
   const resizable = props.narrow && !isMobile;
   const visible = props.sections.filter((s) => s.threads.length > 0);
   const lit = (row: InboxListRow) => props.lit?.has(row.thread_id) === true;
@@ -523,6 +526,17 @@ export function InboxList(props: InboxListProps) {
           <Tip content={props.path} cut>
             <span className="ib-path">{props.path}</span>
           </Tip>
+        )}
+        {props.onUnreadOnlyChange && (
+          <>
+            <Tip content={props.unreadOnly ? 'Show all threads' : 'Show unread threads'}>
+              <button type="button" className="ib-unread-filter" aria-label="Unread threads only" aria-pressed={props.unreadOnly === true} aria-describedby={unreadHintId} onClick={() => props.onUnreadOnlyChange?.(!props.unreadOnly)}>
+                <Icon name="inbox" size={13} />
+                Unread
+              </button>
+            </Tip>
+            <span id={unreadHintId} className="ib-sr">Show only unread threads. Press Enter or Space to toggle; turn off to show all threads.</span>
+          </>
         )}
         {props.onSearch && (
           <button type="button" className="ib-lhead-search" data-open-search="" aria-label="Search" aria-haspopup="dialog" onClick={(event) => props.onSearch?.(event.currentTarget)}>
