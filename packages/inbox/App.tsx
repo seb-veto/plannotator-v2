@@ -1668,7 +1668,10 @@ function Inbox() {
   // when the thread closes, or when the person opens it.
   const [sidebarHeld, setSidebarHeld] = useState(false);
   sidebarHeldNow.current = sidebarHeld;
-  const stack = useStack(rootRef, phone, [hashOf(route), sidebarOpen, sidebarHeld]);
+  const measuredStack = useStack(rootRef, phone, [hashOf(route), sidebarOpen, sidebarHeld]);
+  const [focusMode, setFocusMode] = useState(false);
+  useEffect(() => setFocusMode(false), [route.page, route.thread, route.file?.id]);
+  const stack = { ...measuredStack, thread: measuredStack.thread || focusMode };
   useEffect(() => {
     if (!sidebarHeld) return;
     const check = () => {
@@ -2170,12 +2173,18 @@ function Inbox() {
    * What a thread or Inbox-list key does now, or null when it stands down (guards.ts
    * for typing, composition and repeat; the rest is the thread's own).
    */
-  const threadKeyAction = (event: KeyboardEvent, key: 'e' | 'z' | 'j' | 'k'): (() => void) | null => {
+  const threadKeyAction = (event: KeyboardEvent, key: 'e' | 'z' | 'j' | 'k' | 'focus'): (() => void) | null => {
     if (event.defaultPrevented || isRepeatKey(event) || isComposingKey(event)) return null;
     if (keysRef.current.soundDialog === 'open' || keysRef.current.agentNoteOpen || routeRef.current.guide) return null;
     // Words selected in a message: its toolbar takes the letters (a comment starting with them).
     if (selectionToolbarShowing()) return null;
     const target = event.target instanceof HTMLElement ? event.target : null;
+    if (key === 'focus') {
+      const now = routeRef.current;
+      if (phone || measuredStack.thread || now.page !== 'inbox' || !now.thread || now.file || now.card || thread?.thread_id !== now.thread) return null;
+      if (modalOpen() || target?.closest('[role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], iframe, .ib-view')) return null;
+      return () => setFocusMode((on) => !on);
+    }
     if (target) {
       if (isEditableTarget(target)) return null;
       if (target.closest('[role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], iframe, .ib-view, [data-step-guard]')) return null;
@@ -2218,6 +2227,10 @@ function Inbox() {
     scope: inboxThreadShortcuts,
     target: 'document',
     handlers: {
+      toggleFocusMode: {
+        when: (event) => (threadKey.current = threadKeyAction(event, 'focus')) !== null,
+        handle: () => threadKey.current?.(),
+      },
       nextThread: {
         when: (event) => (threadKey.current = threadKeyAction(event, 'j')) !== null,
         handle: () => threadKey.current?.(),

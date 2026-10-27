@@ -2342,7 +2342,7 @@ button.ib-vtime:hover { background: color-mix(in oklch, var(--primary) 22%, tran
    480 px), and a file covers its thread (full screen) when the two do not
    (440 + 480 px). The desktop chrome stays: the docked sidebar, the headers,
    the close buttons. App.tsx sets `data-stack` (`thread`, `file`) on
-   .pn-inbox; a wide window never gets it, so it is drawn as before. */
+   .pn-inbox; a wide window gets it only in explicit thread focus mode. */
 .pn-inbox[data-stack~="thread"] .ib-main { position: relative; }
 .pn-inbox[data-stack~="thread"][data-view="thread"] .ib-listcol { position: absolute; inset: 0; visibility: hidden; }
 .pn-inbox[data-stack~="file"][data-view="file"] .ib-pane.ib-withfile { display: none; }

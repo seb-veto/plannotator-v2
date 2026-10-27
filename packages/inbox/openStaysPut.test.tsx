@@ -85,7 +85,7 @@ async function agentSends(body: string, reply_to?: string): Promise<string> {
   return (JSON.parse(await readLine()) as { sent: string }).sent;
 }
 
-const TESTS = 13;
+const TESTS = 14;
 
 beforeAll(async () => {
   if (!hasDom) return;
@@ -234,6 +234,45 @@ function mouseClick(el: HTMLElement) {
     el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 1 }));
   });
 }
+
+test.skipIf(!hasDom)('Command-period toggles thread focus mode, preserves the list and yields to dialogs', async () => {
+  const el = await renderApp(`#project=${world.project}`);
+  const root = el.querySelector<HTMLElement>('.pn-inbox')!;
+  const key = (init: KeyboardEventInit = {}, target: EventTarget = document.body) => {
+    const event = new KeyboardEvent('keydown', { key: '.', metaKey: true, bubbles: true, cancelable: true, ...init });
+    act(() => { target.dispatchEvent(event); });
+    return event;
+  };
+  expect(key().defaultPrevented).toBe(false);
+  await openRow(el, world.news[0]!);
+  const list = el.querySelector('.ib-listcol');
+  const hash = window.location.hash;
+  expect(key().defaultPrevented).toBe(true);
+  await until(() => root.dataset.stack?.includes('thread') === true, 'focus mode covers the Inbox list');
+  expect(window.location.hash).toBe(hash);
+  expect(el.querySelector('.ib-listcol')).toBe(list);
+  expect(key({ repeat: true }).defaultPrevented).toBe(false);
+  const dialog = document.createElement('dialog');
+  dialog.setAttribute('open', '');
+  el.appendChild(dialog);
+  expect(key().defaultPrevented).toBe(false);
+  expect(root.dataset.stack).toContain('thread');
+  dialog.remove();
+  const reply = document.createElement('textarea');
+  reply.value = 'Keep my draft';
+  el.querySelector('section.ib-pane')!.appendChild(reply);
+  expect(key({}, reply).defaultPrevented).toBe(true);
+  await until(() => !root.dataset.stack?.includes('thread'), 'focus mode restores the Inbox list');
+  expect(reply.value).toBe('Keep my draft');
+  expect(window.location.hash).toBe(hash);
+  expect(el.querySelector('.ib-listcol')).toBe(list);
+  key();
+  await until(() => root.dataset.stack?.includes('thread') === true, 'focus mode on again');
+  closeThread();
+  await until(() => el.querySelector('section.ib-pane') === null, 'Escape closes the focused thread');
+  await openRow(el, world.news[1]!);
+  expect(root.dataset.stack?.includes('thread')).not.toBe(true);
+});
 
 test.skipIf(!hasDom)('J and K open Inbox rows in visible order without wrapping', async () => {
   const el = await renderApp(`#project=${world.project}`);

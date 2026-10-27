@@ -30,6 +30,16 @@ describe('the Inbox surface', () => {
     expect(inboxFileViewerShortcuts.shortcuts.toggleTools.bindings).toEqual(htmlAnnotateShortcuts.shortcuts.toggleTools.bindings);
   });
 
+  test('focus mode uses Command-period on Mac and Control-period elsewhere', () => {
+    const shortcut = inboxThreadShortcuts.shortcuts.toggleFocusMode;
+    expect(shortcut.bindings).toEqual(['Mod+.']);
+    const key = (init: KeyboardEventInit) => ({ key: '.', code: 'Period', metaKey: false, ctrlKey: false, shiftKey: false, altKey: false, ...init }) as KeyboardEvent;
+    expect(matchesShortcutBinding(key({ metaKey: true }), shortcut.bindings[0]!)).toBe(true);
+    expect(matchesShortcutBinding(key({ ctrlKey: true }), shortcut.bindings[0]!)).toBe(true);
+    expect(matchesShortcutBinding(key({}), shortcut.bindings[0]!)).toBe(false);
+    expect(matchesShortcutBinding(key({ metaKey: true, shiftKey: true }), shortcut.bindings[0]!)).toBe(false);
+  });
+
   test('the bindings match the keys the Inbox reacts to, and only without ⌘ / Ctrl / Alt', () => {
     const keydown = (init: KeyboardEventInit) => ({ key: '', code: '', metaKey: false, ctrlKey: false, shiftKey: false, altKey: false, ...init }) as KeyboardEvent;
     const { escape, next, previous } = inboxFileViewerShortcuts.shortcuts;

@@ -1,14 +1,22 @@
 import { defineShortcutScope } from '@plannotator/ui/shortcuts';
 
 /**
- * The thread and Inbox list's keys (App.tsx). Bare letters,
- * so never while typing, in a dialog, menu or listbox, or in an open file
+ * The thread and Inbox list's keys (App.tsx). Bare letters stand down
+ * while typing; all stand down in a dialog, menu, listbox or open file
  * (guards.ts and the handler's `when`).
  */
 export const inboxThreadShortcuts = defineShortcutScope({
   id: 'inbox-thread',
   title: 'Thread',
   shortcuts: {
+    toggleFocusMode: {
+      description: 'Toggle thread focus mode',
+      bindings: ['Mod+.'],
+      section: 'View',
+      hint: 'Hide the Inbox column; press again to restore it. Keeps the thread and reply draft open.',
+      preventDefault: true,
+      displayOrder: 4,
+    },
     archive: {
       description: 'Archive thread',
       bindings: ['E'],
