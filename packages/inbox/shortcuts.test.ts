@@ -19,7 +19,7 @@ describe('the Inbox surface', () => {
     expect(inboxSurface.registry).toBe(inboxShortcutRegistry);
   });
 
-  test('the only bare letters are E and Z (Mark read, Undo)', () => {
+  test('the only bare letters are E and Z (Archive, Undo)', () => {
     const letters = listRegistryShortcuts(inboxShortcutRegistry)
       .flatMap((entry) => entry.bindings)
       .filter((binding) => /^[A-Z]$/.test(binding));
@@ -39,9 +39,9 @@ describe('the Inbox surface', () => {
     // ⌘] is the browser's Forward; Shift+→ extends a selection.
     expect(next.bindings.some((b) => matchesShortcutBinding(keydown({ key: ']', metaKey: true }), b))).toBe(false);
     expect(next.bindings.some((b) => matchesShortcutBinding(keydown({ key: 'ArrowRight', shiftKey: true }), b))).toBe(false);
-    const { markRead } = inboxThreadShortcuts.shortcuts;
-    expect(markRead.bindings.some((b) => matchesShortcutBinding(keydown({ key: 'e' }), b))).toBe(true);
-    expect(markRead.bindings.some((b) => matchesShortcutBinding(keydown({ key: 'e', ctrlKey: true }), b))).toBe(false);
-    expect(markRead.bindings.some((b) => matchesShortcutBinding(keydown({ key: 'e', altKey: true }), b))).toBe(false);
+    const { archive } = inboxThreadShortcuts.shortcuts;
+    expect(archive.bindings.some((b) => matchesShortcutBinding(keydown({ key: 'e' }), b))).toBe(true);
+    expect(archive.bindings.some((b) => matchesShortcutBinding(keydown({ key: 'e', ctrlKey: true }), b))).toBe(false);
+    expect(archive.bindings.some((b) => matchesShortcutBinding(keydown({ key: 'e', altKey: true }), b))).toBe(false);
   });
 });

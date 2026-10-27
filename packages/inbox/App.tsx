@@ -83,7 +83,7 @@ import { GuidePane } from './components/GuidePane';
 import { AboutBlock, FailedDialog, GeneralUpdateRow, RestartDialog, UpdateDialog, WhatsNewPage } from './components/Updates';
 import { leaveOnPurpose, unsentReply } from './unsent';
 import { InboxToast, type InboxToastModel, toastSpeech } from './components/Toast';
-import { canToggleRead, MARK_READ_UNDO_MS, markReadToast } from './markRead';
+import { MARK_READ_UNDO_MS, markReadToast } from './markRead';
 import { threadLink, type RowMenuAction } from './rowMenu';
 import { movePin, unpinnedWhere } from './pins';
 import type { PinnedAction } from './components/PinnedRow';
@@ -1836,7 +1836,7 @@ function Inbox() {
   };
 
   /**
-   * Mark read, or move it back (the pressed button, `E` again, Undo). The
+   * Mark read, or move it back (the pressed button or Undo). The
    * thread leaves the top for Quiet with its waiting questions closed; Undo
    * reopens them as they were. An agent stopped or held up on it makes the
    * toast a warning with Reply.
@@ -2158,14 +2158,14 @@ function Inbox() {
     return true;
   };
 
-  // E marks the open thread (or the focused row) read, and again moves it
-  // back; Z undoes while the toast is up. Never while typing, never with a
+  // E archives the open thread (or the focused row); Z undoes while the
+  // toast is up. Never while typing, never with a
   // modifier (so the reply box keeps its own ⌘Z).
   // An open file (its viewer, the stepping bar, the guard row) and a guided
   // review own the keyboard: E and Z stand down there, and while the sound
   // dialog is up.
-  const keysRef = useRef({ markRead, toast, thread, soundDialog, agentNoteOpen: false });
-  keysRef.current = { markRead, toast, thread, soundDialog, agentNoteOpen: typeof agentNote === 'object' };
+  const keysRef = useRef({ archive, toast, thread, soundDialog, agentNoteOpen: false });
+  keysRef.current = { archive, toast, thread, soundDialog, agentNoteOpen: typeof agentNote === 'object' };
   /**
    * What E or Z does now, or null when it stands down (the rules: guards.ts
    * for typing, composition and repeat; the rest is the thread's own).
@@ -2182,7 +2182,7 @@ function Inbox() {
     }
     // With a file open beside the thread, only a key aimed at the thread or the list counts.
     if (routeRef.current.file && !target?.closest('section.ib-pane, .ib-listcol')) return null;
-    const { markRead: toggle, toast: current, thread: open } = keysRef.current;
+    const { archive: archiveThread, toast: current, thread: open } = keysRef.current;
     // Never over the tour: its screens are a replay, and an undo would write to the Inbox underneath.
     if (key === 'z') return routeRef.current.page === 'tour' ? null : (current?.onUndo ?? null);
     if (routeRef.current.page !== 'inbox') return null;
@@ -2193,14 +2193,14 @@ function Inbox() {
     const threadId = rowId ?? (open && open.thread_id === routeRef.current.thread ? open.thread_id : null);
     if (!threadId) return null;
     const row = rowOf(threadId);
-    if (!row || !canToggleRead(row, listedInNew(threadId))) return null;
-    return () => void toggle(threadId, !(row.read_at ?? null));
+    if (!row || row.resolved_at !== null) return null;
+    return () => void archiveThread(threadId, threadId, true);
   };
   const threadKey = useRef<(() => void) | null>(null);
   useShortcutScope({
     scope: inboxThreadShortcuts,
     handlers: {
-      markRead: {
+      archive: {
         when: (event) => (threadKey.current = threadKeyAction(event, 'e')) !== null,
         handle: () => threadKey.current?.(),
       },

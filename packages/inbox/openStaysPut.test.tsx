@@ -264,10 +264,6 @@ test.skipIf(!hasDom)('opening a New row unbolds it where it is, keeps it selecte
   expect(action()).not.toBeNull();
   act(() => header().click());
   await until(() => header().getAttribute('aria-pressed') === 'true', 'header Mark read');
-  act(() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'e', bubbles: true })));
-  await until(() => header().getAttribute('aria-pressed') === 'false', 'E moves it back');
-  act(() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'e', bubbles: true })));
-  await until(() => header().getAttribute('aria-pressed') === 'true', 'E marks the seen update read');
 });
 
 test.skipIf(!hasDom)('opening a second row while one is open moves nothing; closing settles both, and focus goes to the row now in the slot', async () => {
@@ -441,11 +437,11 @@ test.skipIf(!hasDom)('a phone: Back shows the list as it was left, and it settle
   expect(document.activeElement?.closest('[data-thread-id]') ?? null).toBeNull();
 });
 
-test.skipIf(!hasDom)('after a mouse close the window hands no row focus, and E marks nothing the person did not choose', async () => {
+test.skipIf(!hasDom)('after a mouse close the window hands no row focus, and E archives nothing the person did not choose', async () => {
   const el = await renderApp(`#project=${world.project}`);
   const first = world.news[0]!;
   await openRow(el, first);
-  // A row that waits on the person (a question), so Mark read would apply to it.
+  // Another active row, so Archive would apply to it.
   const asked = await agentSends('One question:\n\n:::question\nShip it?\n\n- [ ] Yes\n- [ ] No\n:::');
   act(() => pokeStream!());
   await until(() => el.querySelector('[data-inbox-notice]') !== null, 'the "1 new" notice');
@@ -459,7 +455,7 @@ test.skipIf(!hasDom)('after a mouse close the window hands no row focus, and E m
     document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'e', bubbles: true }));
   });
   await wait(150);
-  expect(posted.filter((path) => path.endsWith('/read'))).toEqual([]);
+  expect(posted.filter((path) => path.endsWith('/resolve'))).toEqual([]);
 });
 
 test.skipIf(!hasDom)('Mark read inside an open thread: the toast says the row will move, and it moves when the list settles', async () => {

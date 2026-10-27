@@ -347,7 +347,7 @@ test('Mark read on a thread an agent is stopped on warns with Reply; Z undoes it
   const { page, threads } = world;
   await page.locator(`.ib-lbody [data-thread-id="${threads.worker}"]`).click();
   await expect(page.locator('[data-mark-read]')).toHaveAttribute('aria-pressed', 'false');
-  await page.locator('body').press('e');
+  await page.locator('[data-mark-read]').click();
   const toast = page.locator('[data-inbox-toast]');
   await expect(toast).toContainText('Claude Code was stopped');
   await expect(toast.getByRole('button', { name: 'Reply' })).toBeVisible();

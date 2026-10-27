@@ -309,7 +309,7 @@ function RowWithAction({
         </Tip>
       )}
       {offer && (
-        <Tip content="Quiet; closes unanswered questions (E)">
+        <Tip content="Quiet; closes unanswered questions">
           <button
             type="button"
             className="ib-ract"

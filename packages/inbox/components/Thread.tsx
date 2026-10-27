@@ -3098,12 +3098,13 @@ export function ThreadPane({ notice, thread, sent, onQuestions, onChanged, draft
   };
 
   const archiveButton = (
-    <Tip content={archived ? 'Unarchive' : 'Archive: the thread ends; the next message starts a new one'}>
+    <Tip content={archived ? 'Unarchive' : 'Archive thread (E)'}>
       <button
         type="button"
         className="ib-iconbtn"
         onClick={() => void resolve(!archived)}
         aria-label={archived ? 'Unarchive the thread' : 'Archive the thread'}
+        aria-keyshortcuts={archived ? undefined : 'E'}
         data-archive=""
       >
         <Icon name="archive" />
@@ -3158,16 +3159,15 @@ export function ThreadPane({ notice, thread, sent, onQuestions, onChanged, draft
     <Tip
       content={
         readAt !== null
-          ? 'Move back · E'
+          ? 'Move back'
           : markReadEnabled
-            ? 'Quiet; closes unanswered questions (E)'
+            ? 'Quiet; closes unanswered questions'
             : 'Nothing here waits on you'
       }
     >
       <button type="button" className="ib-hbtn" data-mark-read="" aria-pressed={readAt !== null} disabled={!markReadEnabled} onClick={() => onMarkRead!(readAt === null)}>
         <Icon name="checkCircle" size={16} />
         <span className="ib-hbtn-l">{readAt !== null ? 'Read' : 'Mark read'}</span>
-        <kbd className="ib-kbd ib-wide">E</kbd>
       </button>
     </Tip>
   ) : null;
@@ -3231,7 +3231,7 @@ export function ThreadPane({ notice, thread, sent, onQuestions, onChanged, draft
             )}
           </>
         )}
-        {/* Mark read leads, furthest from the close, with its label and its E; everything at the right is an icon
+        {/* Mark read leads, furthest from the close, with its label; everything at the right is an icon
             with a tooltip (approval "inbox-thread-artifacts"): Artifacts, Expand / Fold all, Archive, then the close.
             A phone keeps the same order after its way back. */}
         {phone && artifactsOn ? null : (

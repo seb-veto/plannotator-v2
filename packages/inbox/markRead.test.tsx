@@ -6,7 +6,7 @@
  * loopback. What is proved: the reply box's skip chip (Keep open by default
  * for words alone, skip once the Send carries a pick: approval
  * "inbox-words-only-reply"), the
- * header's Mark read button and its pressed "Read" state, `E` and `Z`, the
+ * header's Mark read button and its pressed "Read" state, Archive on `E` and Undo on `Z`, the
  * Undo toast, the warning (with Reply) when an agent is stopped on the
  * thread, the row's hover action, that the person's own action never
  * reorders the list while the thread stays open, and that one Send is one
@@ -82,7 +82,7 @@ async function serverSection(threadId: string): Promise<string | undefined> {
   return model.sections.find((s) => s.threads.some((t) => t.thread_id === threadId))?.id;
 }
 
-const TESTS = 16;
+const TESTS = 17;
 
 beforeAll(async () => {
   if (!hasDom) return;
@@ -278,14 +278,37 @@ test.skipIf(!hasDom)('a pick never turns the default to skip (approval "inbox-ex
   expect((await questionStates(ids.stopped)).map((q) => q.state)).toEqual(['sent', 'open']);
 });
 
-test.skipIf(!hasDom)('E marks the open thread read; a stopped thread warns with Reply; E is not taken while typing; Z undoes', async () => {
+test.skipIf(!hasDom)('E archives the open thread or focused row; Z undoes and E never toggles an archive', async () => {
+  const el = await renderApp(`#thread=${ids.stopped}`);
+  press('e');
+  await until(() => document.querySelector('[data-inbox-toast]') !== null, 'the archive toast');
+  expect(posted.at(-1)).toMatchObject({ path: `/api/inbox/messages/${ids.stopped}/resolve`, body: { resolved: true } });
+  expect(document.querySelector('[data-inbox-toast]')?.textContent).toContain('Archived');
+  const count = posted.length;
+  press('e');
+  await settle();
+  expect(posted.length).toBe(count);
+  press('z');
+  await until(() => posted.at(-1)?.body.resolved === false && !document.querySelector('[data-inbox-toast]'), 'archive Undo');
+  expect(posted.at(-1)?.path).toBe(`/api/inbox/messages/${ids.stopped}/resolve`);
+  const row = el.querySelector<HTMLButtonElement>(`.ib-listcol [data-row="${ids.waiting}"] [data-thread-id]`)!;
+  act(() => row.focus());
+  press('e', row);
+  await until(() => document.querySelector('[data-inbox-toast]') !== null, 'focused-row archive');
+  expect(posted.at(-1)).toMatchObject({ path: `/api/inbox/messages/${ids.waiting}/resolve`, body: { resolved: true } });
+  expect(window.location.hash).toContain(ids.stopped);
+  expect(el.querySelector('[aria-label="Archive the thread"]')).not.toBeNull();
+  expect(posted.some((p) => p.path.endsWith('/read'))).toBe(false);
+});
+
+test.skipIf(!hasDom)('Mark read warns when an agent is stopped; E is not taken while typing; Z undoes', async () => {
   const el = await renderApp(`#thread=${ids.stopped}`);
   const head = () => el.querySelector('[data-mark-read]') as HTMLButtonElement;
   expect(head().getAttribute('aria-pressed')).toBe('false');
   expect(head().disabled).toBe(false);
   expect(head().textContent).toContain('Mark read');
 
-  press('e');
+  act(() => head().click());
   await until(() => head().getAttribute('aria-pressed') === 'true', 'the pressed button');
   expect(posted.at(-1)!.path).toBe(`/api/inbox/threads/${ids.stopped}/read`);
   expect(head().getAttribute('aria-pressed')).toBe('true');
@@ -422,13 +445,6 @@ test.skipIf(!hasDom)('with another thread open, marking a row read names that ro
   press('z');
   await until(() => posted.at(-1)!.path === `/api/inbox/threads/${ids.waiting}/unread` && toastSays() === null, 'Undo');
 
-  // E on the row the keyboard is on says the same.
-  const rowButton = el.querySelector(`.ib-listcol [data-row="${ids.waiting}"] button:not([data-row-mark-read])`) as HTMLButtonElement;
-  act(() => rowButton.focus());
-  press('e', rowButton);
-  await until(() => toastSays() !== null, 'the toast after E');
-  expect(posted.at(-1)!.path).toBe(`/api/inbox/threads/${ids.waiting}/read`);
-  expect(toastSays()).toEqual(['Marked read', `“${subject}”`]);
 });
 
 test.skipIf(!hasDom)("the warning toast's Reply moves the thread back and opens the reply box", async () => {
@@ -536,19 +552,19 @@ test.skipIf(!hasDom)('two sessions, words only (Keep open by default): the words
   expect((await questionStates(ids.mixed)).map((q) => q.state)).toEqual(['open']);
 });
 
-test.skipIf(!hasDom)('with a file open beside the thread, E stands down in the viewer and on the page; aimed at the thread it still marks read', async () => {
+test.skipIf(!hasDom)('with a file open beside the thread, E stands down in the viewer and on the page; aimed at the thread it archives', async () => {
   const el = await renderApp(`#thread=${ids.filed}&file=${ids.attachment}`);
   await until(() => el.querySelector('.ib-view') !== null, 'the file viewer');
   const inViewer = el.querySelector('.ib-view button') as HTMLButtonElement;
   press('e', inViewer);
   press('e');
   await settle();
-  expect(posted.filter((p) => p.path.endsWith('/read'))).toEqual([]);
+  expect(posted.filter((p) => p.path.endsWith('/resolve'))).toEqual([]);
   // A key aimed at the thread pane is the thread's.
   press('e', el.querySelector('section.ib-pane [data-mark-read]')!);
-  await until(() => posted.some((p) => p.path === `/api/inbox/threads/${ids.filed}/read`), 'the Mark read');
+  await until(() => posted.some((p) => p.path === `/api/inbox/messages/${ids.filed}/resolve` && p.body.resolved === true), 'the archive');
   // Z inside the viewer does not undo.
   press('z', el.querySelector('.ib-view button')!);
   await settle();
-  expect(posted.some((p) => p.path.endsWith('/unread'))).toBe(false);
+  expect(posted.some((p) => p.path.endsWith('/resolve') && p.body.resolved === false)).toBe(false);
 });

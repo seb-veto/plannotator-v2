@@ -349,12 +349,12 @@ for (const layout of [
   });
 }
 
-test('desktop, the mouse: a close hands no row focus, no Mark read action shows, and E marks nothing', async ({ browser }: { browser: Browser }) => {
+test('desktop, the mouse: a close hands no row focus, no Mark read action shows, and E archives nothing', async ({ browser }: { browser: Browser }) => {
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, colorScheme: 'dark' });
   const page = await context.newPage();
   const marked: string[] = [];
   page.on('request', (request) => {
-    if (request.method() === 'POST' && request.url().endsWith('/read')) marked.push(request.url());
+    if (request.method() === 'POST' && request.url().endsWith('/resolve')) marked.push(request.url());
   });
   const { id, threads } = world.projects.mouse;
   await page.goto(`${world.url}/#project=${id}`);
